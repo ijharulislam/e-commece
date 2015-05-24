@@ -1,0 +1,57 @@
+
+{% load catalog_filters %}
+
+{% load thumbnail %}
+
+{% with items=cart.get_items sub_total=cart.get_sub_total items_count=cart.get_items_count %}
+<div class="basket">
+	<div class="basket-cap">
+		<div class="cart-count">
+			{% if items_count %}
+			<span class="basket-items-count">{{ items_count  }}</span>
+			{% endif %}
+			<i class="fa fa-shopping-cart"></i>
+		</div>
+		<span class="price">{{ sub_total }}</span>
+	</div>
+	<div class="basket-items" context-menu='#basket-container'>
+		<span class="arrow"></span>
+		{% if items %}
+		<ul>
+			{% for item in items %}
+			{% with book=item.book %}
+			<li class="cart-item">
+				<div class="item-preview">
+					{% thumbnail book.pics.all.0.url "54x54" as im %}
+					<img src="{{ im.url }}" alt="{{ book.name }}" title="{{ book.name }}" />
+					{% endthumbnail %}
+				</div>
+				<form method="post" class="cart-item-remove" data-ajax="true" data-ajax-url="{% url 'sales_remove_from_cart' %}" data-ajax-update="#basket-container" data-ajax-success="basketChanged();">
+					{% csrf_token %}
+					<input name="book_id" type="hidden" value="{{ item.book_id }}"/>
+					<a onclick="javascript:$(this).closest('form').submit();" title="Remove this product."><i class="fa fa-trash-o"></i></a>
+				</form>
+				<a href="{{ book.get_absolute_url }}" title="{{ book.gist }}">{{ book.name }}</a>
+				<p>
+					<span class="price" title="Per unit price">{{ book.price }}</span>
+					<br />
+					<span class="quantity">Qty: {{ item.quantity }}</span>
+				</p>
+			</li>
+			{% endwith %}
+			{% endfor %}
+		</ul>
+		<div class="sub-total">
+			<p>
+				<label>Sub-Total:</label> <span class="price">{{ sub_total }}</span>
+			</p>
+			<a href="{% url 'sales_checkout_cart' %}" class="button">Checkout</a>
+		</div>
+		{% else %}
+		<div class="no-items" >
+			You have no items in your shopping cart.
+		</div>
+		{% endif %}
+	</div>
+</div>
+{% endwith %}

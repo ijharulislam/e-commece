@@ -1,0 +1,7 @@
+{% extends catalog_template_name %}
+
+
+{% block catalog-content %}
+<h3>{{ publisher.name }}</h3>
+{% include "books_list.html" %}
+{% endblock %}

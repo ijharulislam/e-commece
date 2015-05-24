@@ -1,0 +1,115 @@
+{% extends checkout_template_name %}
+{% load catalog_filters %}
+{% load catalog_filters %}
+{% load thumbnail %}
+
+{% load pipeline %}
+
+{% block checkout-content %}
+<div class="order">
+	{% if error %}
+	<div class="error-message-box">
+		{{ error }}
+	</div>
+	{% endif %}
+	<div class="addresses">
+		{% with address=billing_address address_name="Billing Address" address_icon="fa-home" %}
+		{% include "address.html" %}
+		{% endwith %}
+		{% with address=shipping_address address_name="Shipping Address" address_icon="fa-truck" %}
+		{% include "address.html" %}
+		{% endwith %}	
+	</div>
+	<div class="payment-method">
+		<h3>Payment Method</h3>
+		<b>{{ payment_method }}</b>
+	</div>
+	<div class="cart">
+		{% with items=cart.get_items %}
+		{% if items %}
+		<table class="cart-items">
+			<thead>
+				<th>Book{{ items|pluralize }}</th>
+				<th>Price</th>
+				<th>Quantity</th>
+				<th>Sub-Total</th>
+			</thead>
+			<tbody>
+				{% for item in items %}
+				{% with book=item.book %}
+				<tr class="cart-item">
+					<td>
+					<div class="item-preview">
+						{% thumbnail book.pics.all.0.url "94x94" as im %}
+						<img src="{{ im.url }}" alt="{{ book.name }}" title="{{ book.name }}" />
+						{% endthumbnail %}
+					</div><a class="item-title" href="{{ book.get_absolute_url }}">{{ book.name }}</a></td>
+					<td><span class="price"> {{ book.price|currency:default_currency }}
+						{% if book.old_price %}
+						<br/>
+						<span class="old-price">{{ book.price|currency:default_currency}}</span>
+						<br/>
+						<span class="discount">{{ book.get_discount }}% OFF</span> {% endif %} </span></td>
+					<td><span>{{ item.quantity }}</span>
+					<td><span class="total price">{{ item.get_sub_total|currency:default_currency }}</span></td>
+				</tr>
+				{% endwith %}
+				{% endfor %}
+			</tbody>
+		</table>
+		<div class="cart-summary">
+			<div class="cart-total">
+				<table>
+					<tr>
+						<td><label>Sub-Total:</label></td>
+						<td><span class="price">{{ cart.get_sub_total }}</span></td>
+					</tr>
+					<tr>
+						<td><label>Shipping:</label></td>
+						<td><span class="price">{{ cart.get_shipping_cost}}</span></td>
+					</tr>
+					<tr>
+						<td><label>Tax:</label></td>
+						<td><span class="price">{{ cart.get_taxes }}</span></td>
+					</tr>
+					<tr>
+						<td><label>Total:</label></td>
+						<td><span class="price total">{{ cart.get_total }}</span></td>
+					</tr>
+				</table>
+			</div>
+		</div>
+		<div class="cart-options">
+			<form method="post" {% if payment_method == 'Credit Card' %}data-ajax="true"{% endif %} action="{% url 'sales_checkout_order' %}" data-ajax-update="#payment-options-container" data-ajax-success="showPaymentOptions();">
+				{% csrf_token %}
+				<a title="Placed order" class="button checkout" onclick="javascript:$(this).closest('form').submit();">
+					<i class="fa fa-legal"></i>Place Order
+				</a>
+			</form>
+		</div>
+		{% else %}
+		<div class="no-items" >
+			You have no items in your shopping cart.
+		</div>
+		{% endif %}
+		{% endwith %}
+	</div>
+</div>
+<div id="payment-options-container" style="display:none;">
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ block.super }}
+{% javascript 'sales_checkout_order' %}
+<script type="text/javascript">
+	function showPaymentOptions() {
+		$("#payment-options-container").dialog({
+			width: 350,
+			modal: true,
+			closeOnEscape: false,
+			open: function(event, ui) { $('.ui-dialog-titlebar').hide(); }
+		 });
+	}
+</script>
+{% endblock %}

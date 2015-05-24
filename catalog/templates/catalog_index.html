@@ -1,0 +1,19 @@
+{% extends 'catalog_base.html' %}
+
+{% load catalog_filters %}
+
+{% block catalog-content %}
+<div style="clear: both; overflow: hidden;">
+	<h3>Featured</h3>
+
+	{% with books=featured_books %}
+	{% include "books_list.html" %}
+	{% endwith %}
+</div>
+<div style="clear: both; overflow: hidden; margin-top: 20px;">
+	<h3>New Arrivals</h3>
+	{% with books=recent_books %}
+	{% include "books_list.html" %}
+	{% endwith %}
+</div>
+{% endblock %}

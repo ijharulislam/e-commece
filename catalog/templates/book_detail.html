@@ -1,0 +1,105 @@
+{% extends catalog_template_name %}
+
+{% load pipeline %}
+{% load catalog_filters %}
+
+{% block catalog-content %}
+<div class="product-summary">
+	<h2>{{ book.name }}
+		{% if book.old_price %}
+		<span class="discount"> {{ book.get_discount }}% OFF</span>
+		{% endif %}
+	</h2>
+	<div class="product-description">
+		{{ book.gist }}
+	</div>
+	<div class="cart-summary">
+		<ul>
+			<li>
+				{% if book.quantity %}
+				<span class="in-stock">In Stock</span>
+				{% else %}
+				<span class="out-of-stock">Out of Stock</span>
+				{% endif %}
+			</li>
+			<li>
+				 <label>Publisher</label> <a href="{{ book.book_publisher.get_absolute_url }}">{{ book.book_publihser.name }}</a> 
+			</li>
+			<li>
+				{% if book.is_free_shipping %}
+				<div class="free-shipping">
+					Free Shipping
+				</div>
+				{% else %}
+				<label>Shpping cost:</label> {{ book.shipping_cost|currency:default_currency }}/Unit
+				{% endif %}
+			</li>
+			<li class="price">
+				{{ book.price|currency:default_currency }}
+				{% if boook.old_price %}
+				<span class="old-price"> {{ book.old_price|currency:default_currency }}</span>
+				<span class="discount"> {{ book.get_discount }}% OFF</span>
+				{% endif %}
+			</li>
+			<li class="add-to-cart-summary">
+				<form id="add-to-cart-form" method="post" action="{% url 'sales_add_to_cart' %}" data-ajax="true" data-ajax-update="#basket-container" data-ajax-success="basketChanged();" data-ajax-complete="add_to_cart">
+					{% csrf_token %}
+					<label>Qty:</label>
+					<input name="product_id" type="hidden" value="{{ book.id }}"/>
+					<input name="quantity" type="text" value="1"/>
+					<button class="add-to-cart">
+						<i class="fa fa-shopping-cart"></i>Add to Cart
+					</button>
+					<button class="buy-now" onclick="javascript:$(this).closest('form').unbind('submit'); $(this).closest('form').submit();">
+						<i class="fa fa-money"></i>Buy Now
+					</button>
+				</form>
+			</li>
+		</ul>
+	</div>
+</div>
+<div id="product-show">
+	<div id="preview-container">
+		<img id="preview-zoom" src="{{ MEDIA_URL }}{{ book.pics.all.0.url }}"/>
+	</div>
+	{% with pics=book.pics.all %}
+	{% if pics|length > 1 %}
+	<div id="slides-container">
+		<a class="prev" href="#"><i class="fa fa-chevron-left"></i></a>
+		<a class="next" href="#"><i class="fa fa-chevron-right"></i></a>
+		<div id="pics-slideshow">
+			<ul>
+				{% for pic in pics %}
+				<li>
+					<img src="{{ MEDIA_URL }}{{ pic.url }}">
+				</li>
+				{% endfor %}
+			</ul>
+		</div>
+	</div>
+	{% endif %}
+	{% endwith %}
+</div>
+
+
+{% endblock %}
+
+{% block scripts %}
+{{ block.super }}
+{% javascript 'product_detail' %}
+<script type="text/javascript">
+	// Expanding to sub category been selected
+	expandCategories('{{ book.category_id }}');
+
+	// Generating tabs
+	$('#product-details').tabs(); 
+
+	function add_to_cart(data) {
+		if(data.status == 200) {
+			// success message
+		} else {
+			alert(data.responseText);
+		}
+	}
+</script>
+{% endblock %}

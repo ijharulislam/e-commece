@@ -1,0 +1,114 @@
+{% load catalog_filters %}
+
+<div id="payment-options">
+    <ul>
+        {% if form %}
+        <li><a href="#payment-credit-card">Credit Card</a></li>
+        {% endif %}
+        {% for gateway in gateways %}
+        {% if gateway.accept_account %}
+        <li><a href="#payment-{{ gateway.get_name_display }}">{{ gateway.get_name_display }}</a></li>
+        {% endif %}
+        {% endfor %}
+    </ul>
+    {% if form %}
+    <div id="payment-credit-card" class="credit-card action-form">
+        <form method="post" data-ajax="true" action="{% url 'payments_process_credit_card' order.id order.receipt_code %}" data-ajax-update="#payment-options-container" data-ajax-loading="#process-credit-card">
+            {% csrf_token %}
+            {{ form.gateway }}
+            <ul>
+                {% if error %}
+                <li class="error-message-box">
+                    {{ error }}
+                </li>
+                {% endif %}
+                <li>
+                    <i class="fa fa-user"></i>
+                    {{ form.card_name }}
+                    {{ form.card_name.errors }}
+                </li>
+                <li>
+                    <i class="fa fa-credit-card"></i>
+                    {{ form.card_number }}
+                    <i class="fa fa-check"></i>
+                    {{ form.card_number.errors }}
+                    {{ form.card_type.errors }}
+                </li>
+                <li class="dual-input">
+                    <span>
+                        <i class="fa fa-calendar-o"></i>
+                        {{ form.expire_date }}
+                    </span>
+                    <span>
+                        <i class="fa fa-lock fa-lg"></i>
+                        {{ form.cvv2 }}
+                    </span>
+                    <br/>
+                    {{ form.expire_date.errors }}
+                    {{ form.cvv2.errors }}
+                </li>
+                <li class="pay-botton-container">
+                    <i id="process-credit-card" class="fa fa-spinner fa-lg fa-spin"></i>
+                    <input type="submit" value="Pay {{ order.total|currency:default_currency }}" class="pay-button" onclick="javascript:$(this).attr('disabled','disabled');" />
+                </li>
+            </ul>
+            {{ form.card_type }}
+        </form>
+    </div>
+    {% endif %}
+    {% for gateway in gateways %}
+    {% if gateway.accept_account %}
+    <div id="payment-{{ gateway.get_name_display }}" class="action-form online-account" >
+        <form method="post" action="{% url 'payments_process_account_request' order.id order.receipt_code %}">
+            {% csrf_token %}
+            <input type="hidden" name="gateway_name" value="{{ gateway.name }}"/>
+            <ul>
+                <li class="info-message-box">
+                    Check out with your existing {{ gateway.get_name_display }} account.
+                </li>
+                <li class="pay-botton-container">
+                   <input type="submit" value="Pay {{ order.total|currency:default_currency }}" class="pay-button" />
+                </li>
+            </ul>
+        </form>
+    </div>
+    {% endif %}
+    {% endfor %}
+</div>
+<script type="text/javascript">
+    // Detect Credit Card Type by Card Number and
+    // fills appropiate type automatically in Card Type
+    var $cardNumber = $('#id_card_number')
+    $cardNumber.change(function(){
+        $cardNumber.validateCreditCard(function(result){
+            $('#id_card_type').val('');
+            $('#payment-options .action-form .fa-check').hide();
+
+            // Removed error highlight if user corrected his card number
+            if($cardNumber.hasClass('input-error') && result.length_valid && result.luhn_valid)
+                $cardNumber.removeClass('input-error');
+
+            if(result.card_type) {
+                $('#id_card_type').val(result.card_type.name);
+                $('#payment-options .action-form .fa-check').css('display', 'inline-block');
+
+                // Highlight card number if wrong when user done with entering
+                if(!$cardNumber.is(':focus') && (!result.length_valid || !result.luhn_valid))
+                    $cardNumber.addClass('input-error');
+            }
+        });
+    });
+
+    // Payments options in tabs
+    $('#payment-options').tabs();
+
+    // Initializing new forms in payment options for ajax requests
+    bootstrapAjax($, '#payment-options');
+
+    // Masking inforce correct inputs
+    $.mask.definitions['0']='[01]';
+
+    $('#id_card_number').mask('9999 9999 9999 9999? 9999', {placeholder: ' '});
+    $('#id_expire_date').mask('09 / 99', {placeholder: '_'});
+    $('#id_cvv2').mask('999?9', {placeholder: ' '});
+</script>

@@ -1,0 +1,14 @@
+
+{% extends catalog_template_name %}
+
+{% block catalog-content %}
+<h3>{{ category.name }}</h3>
+{% include "books_list.html" %}
+{% endblock %}
+
+{% block scripts %}
+{{ block.super }}
+<script type="text/javascript">
+	expandCategories('{{ category.id }}');
+</script>
+{% endblock %}

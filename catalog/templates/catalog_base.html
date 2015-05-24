@@ -1,0 +1,97 @@
+{% extends base_template_name %}
+{% load staticfiles %}
+{% load cart %}
+{% load pipeline %}
+
+{% block styles %}
+{{ block.super }}
+{% stylesheet 'font-awesome' %}
+{% endblock %}
+
+
+
+{% block header-menu-list %}
+<li>
+	{% include "search_box.html" %}
+</li>
+{{ block.super }}
+{% endblock %}
+
+{% block content %}
+<div id="categories-sidebar">
+	<ul id="categories">
+		<li>
+			<h5>Categories</h5>
+		</li>
+		{% with template_name="category_list.html" %}
+		{% for category in categories %}
+		{% include template_name %}
+		{% empty %}
+		<li class="info-message-box no-categories-msg">
+			There are no categories defined.
+		</li>
+		{% endfor %}
+		{% endwith %}
+	</ul>
+	{% if publishers %}
+	<ul id="manufacturers">
+		<li>
+			<h5>Publishers</h5>
+		</li>
+		{% for pub in publishers %}
+		<li>
+			<a href="{{ pub.get_absolute_url }}">{{ pub.name }}</a>
+		</li>
+		{% endfor %}
+	</ul>
+	{% endif %}
+</div>
+<div id="catalog-content-container">
+	<div id="catalog-bar">
+		{% if breadcrumbs %}
+		<ul class="breadcrumbs">
+			{% for crumb in breadcrumbs %}
+			{% if forloop.last %}
+			<li>
+				{% if crumb.name == 'Home' %}
+				<i class="fa fa-home" style="font-size: 1.2em"></i>
+				{% else %}
+				<span>{{ crumb.name }}</span>
+				{% endif %}
+			</li>
+			{% elif crumb.name == 'Home' %}
+			<li>
+				<a href="{{ crumb.url }}" title="Go to {{ crumb.name }}" ><i class="fa fa-home" style="font-size: 1.2em; text-decoration: none;"></i></a>
+			</li>
+			{% else %}
+			<li>
+				<a href="{{ crumb.url }}" title="Go to {{ crumb.name }}" >{{ crumb.name }}</a>
+			</li>
+			{% endif %}
+			{% endfor %}
+		</ul>
+		{% endif %}
+		<div class="cart-basket">
+			<div id="basket-container" onclick="javascript:$('.basket-items', this).fadeIn('fast');">
+				{% cart_basket %}
+			</div>
+
+			<form method="post" action="{% url 'catalog_change_currency' %}" class="currencies">
+				{% csrf_token %}
+				<input type="hidden" name="next" value="{{ request.get_full_path }}" />
+				<select name="default_currency" class="currencies" onchange="javascript:$(this).closest('form').submit();">
+					{% for currency in currencies %}
+					<option value="{{ currency.code }}" {% if default_currency.code == currency.code %}selected="selected"{% endif %}>{{ currency.code }}</option>
+					{% endfor %}
+				</select>
+			</form>
+			<br/>
+		</div>
+	</div>
+	<div id="catalog-content">
+		{% block catalog-content %}
+
+		{% endblock %}
+	</div>
+</div>
+{% endblock %}
